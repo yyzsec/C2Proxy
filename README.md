@@ -394,3 +394,9 @@ func main() {
 
 ![baidu](https://yyz9.cn/images/baidu.jpg)
 
+## 接下来
+
+* 再多看看CS官方文档(正在做.....)
+* 修改一下CS源码流量等特征(正在做.....)
+* 上线
+* 代理C2服务器
