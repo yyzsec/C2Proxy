@@ -1,4 +1,13 @@
 # 使用golang云函数转发http流量
+
+## 2021年8月19日更新
+
+* `http.Post/Get`换成了`http.NewRequest`
+* 最后的C2代理也搭建完毕（虽然用的是python代码，原因如下）
+* <font color=red>Golang写的代理虽然可以正常上线以及执行命令，但是不能回显到cs客户端</font>
+
+## 前言
+
 最近在做红队相关，所以设想了一下隐藏红队C2服务器的骚操作--使用云函数转发http/https流量来隐藏cobaltstrike服务器的http/https beacon。
 ## 阅读golang云函数基本写法
 [看腾讯云的文档](https://cloud.tencent.com/document/product/583/18032)

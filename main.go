@@ -2,20 +2,20 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/tencentyun/scf-go-lib/cloudfunction"
 	"github.com/yyz/C2Proxy/events"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 )
-
-var HTTPresp *http.Response
 // Run 是核心处理函数
 func Run(ctx context.Context, event events.APIGatewayRequest) (resp events.APIGatewayResponse, err error) {
 	// 初始化返回API结构体
 	resp = events.APIGatewayResponse{
-		IsBase64Encoded: false,
+		IsBase64Encoded: true,
 		Headers: map[string]string{},
 		StatusCode: 502,
 		Body: "error",
@@ -32,48 +32,58 @@ func Run(ctx context.Context, event events.APIGatewayRequest) (resp events.APIGa
 			qrString = qrString[:len(qrString)-1]
 		}
 	}
-	reqsUrl := "https://www.baidu.com" + event.Path + qrString
-	// 下面开始判断是GET还是POST请求
-	if event.Method == "GET" {
-		HTTPresp, err = http.Get(reqsUrl)
+	reqsUrl := "http://test.cn:80" + event.Path + qrString
+	fmt.Println("===========================")
+	fmt.Println(event.Method)
+	fmt.Println(event.Body)
 
-		if err != nil {
-			resp.Body = err.Error()
-			return
-		}
-		defer HTTPresp.Body.Close()
-	} else if event.Method == "POST" {
-		if event.Headers["Content-Type"] == "" {
-			event.Headers["Content-Type"] = "application/x-www-form-urlencoded"
-		}
-		HTTPresp, err = http.Post(reqsUrl, event.Headers["Content-Type"], strings.NewReader(event.Body))
-
-		if err != nil {
-			resp.Body = err.Error()
-			return
-		}
-		defer HTTPresp.Body.Close()
+	request, err := http.NewRequest(event.Method, reqsUrl, strings.NewReader(event.Body))
+	if err != nil {
+		log.Println(err)
 	}
 
+	for key, value := range event.Headers {
+		if key == "host" {
+			continue
+		}
+		request.Header[key] = []string{value}
+	}
+
+	request.Header["User-Agent"] = []string{event.Headers["user-agent"]}
+	request.Header["X-Forwarded-For"] = []string{event.Context.SourceIP}
+
+	fmt.Println("===========================")
+	fmt.Println(request.Header)
+	fmt.Println("===========================")
+
+
+	client := &http.Client{}
+	HttpResp, err := client.Do(request)
+	if err != nil {
+		log.Println(err)
+	}
 	// 下面是得到了http response 然后把他封装成API特定的返回的过程
 	// 需要封装resp.Headers、resp.StatusCode、resp.Body、resp.IsBase64Encoded
-	heads := HTTPresp.Header
+	heads := HttpResp.Header
 	for i := range heads {
-		fmt.Println(heads[i])
+		//fmt.Println(heads[i])
 		resp.Headers[i] = heads[i][0]
 	}
-	resp.StatusCode = HTTPresp.StatusCode
-	content, err := ioutil.ReadAll(HTTPresp.Body)
+	resp.StatusCode = HttpResp.StatusCode
+	content, err := ioutil.ReadAll(HttpResp.Body)
 	if err != nil {
 		resp.Body = err.Error()
 		return
 	}
-	resp.Body = string(content)
+	resp.Body = base64Encode(content)
 
 	return
 
 }
-
+func base64Encode(raw []byte) (b64 string) {
+	b64 = base64.StdEncoding.EncodeToString(raw)
+	return
+}
 
 func main() {
 	// 云函数的调用起点
