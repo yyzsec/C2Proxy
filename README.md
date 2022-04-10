@@ -1,5 +1,11 @@
 # 使用golang云函数转发http流量
 
+
+## 2022年4月10日更新
+* golang转发http流量的项目在我另外一个项目完成了，这个仓库不在更新，scf用python代码还是比较方便
+点击 --> [http-forward](https://github.com/yyzsec/http-forward)
+
+
 ## 2021年8月19日更新
 
 * `http.Post/Get`换成了`http.NewRequest`
